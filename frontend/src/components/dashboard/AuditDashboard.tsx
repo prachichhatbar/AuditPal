@@ -70,10 +70,8 @@ const AuditDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-    // Set up polling for real-time updates
-    const intervalId = setInterval(fetchDashboardData, 5000); // Poll every 5 seconds
-
-    return () => clearInterval(intervalId); // Cleanup on unmount
+    const intervalId = setInterval(fetchDashboardData, 5000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,7 +87,6 @@ const AuditDashboard = () => {
         body: JSON.stringify(newTransaction),
       });
 
-      // Reset form regardless of response
       setNewTransaction({
         transaction_date: "",
         department: "",
@@ -97,7 +94,6 @@ const AuditDashboard = () => {
         amount: ""
       });
 
-      // Show success message and refresh data
       showToast('Transaction has been recorded successfully!', 'success');
       await fetchDashboardData();
       
@@ -110,6 +106,80 @@ const AuditDashboard = () => {
   };
 
   if (!data) return <div className="p-4">Loading...</div>;
+
+  const renderChart = () => {
+    switch (chartType) {
+      case 'bar':
+        return (
+          <BarChart data={data.department_statistics}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="department" tick={{ fill: '#374151' }} />
+            <YAxis tick={{ fill: '#374151' }} />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="average_risk_score" fill="#6366f1" name="Risk Score" />
+            <Bar dataKey="transaction_count" fill="#34d399" name="Transactions" />
+          </BarChart>
+        );
+      case 'line':
+        return (
+          <LineChart data={data.department_statistics}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="department" tick={{ fill: '#374151' }} />
+            <YAxis tick={{ fill: '#374151' }} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="average_risk_score" stroke="#6366f1" name="Risk Score" />
+            <Line type="monotone" dataKey="transaction_count" stroke="#34d399" name="Transactions" />
+          </LineChart>
+        );
+      case 'area':
+        return (
+          <AreaChart data={data.department_statistics}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="department" tick={{ fill: '#374151' }} />
+            <YAxis tick={{ fill: '#374151' }} />
+            <Tooltip />
+            <Legend />
+            <Area type="monotone" dataKey="average_risk_score" fill="#6366f1" stroke="#4f46e5" name="Risk Score" />
+            <Area type="monotone" dataKey="transaction_count" fill="#34d399" stroke="#059669" name="Transactions" />
+          </AreaChart>
+        );
+      case 'pie':
+        return (
+          <PieChart>
+            <Pie
+              data={data.department_statistics}
+              dataKey="transaction_count"
+              nameKey="department"
+              cx="50%"
+              cy="50%"
+              outerRadius={150}
+              fill="#6366f1"
+              label
+            >
+              {data.department_statistics.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={['#6366f1', '#34d399', '#f59e0b'][index % 3]} />
+              ))}
+            </Pie>
+            <Tooltip />
+            <Legend />
+          </PieChart>
+        );
+      default:
+        return (
+            <BarChart data={data.department_statistics}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="department" tick={{ fill: '#374151' }} />
+              <YAxis tick={{ fill: '#374151' }} />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="average_risk_score" fill="#6366f1" name="Risk Score" />
+              <Bar dataKey="transaction_count" fill="#34d399" name="Transactions" />
+            </BarChart>
+          );
+    }
+  };
 
   return (
     <div className="p-4 text-gray-800">
@@ -203,7 +273,6 @@ const AuditDashboard = () => {
         </form>
       </Card>
 
-      {/* Rest of the component remains the same */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <Card className="p-6 bg-white shadow-lg">
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Transactions</h3>
@@ -237,61 +306,9 @@ const AuditDashboard = () => {
             <option value="pie">Pie Chart</option>
           </select>
         </div>
-        <div className="h-[400px]">
-          <ResponsiveContainer width="100%" height="100%">
-            {chartType === 'bar' && (
-              <BarChart data={data.department_statistics}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="department" tick={{ fill: '#374151' }} />
-                <YAxis tick={{ fill: '#374151' }} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="average_risk_score" fill="#6366f1" name="Risk Score" />
-                <Bar dataKey="transaction_count" fill="#34d399" name="Transactions" />
-              </BarChart>
-            )}
-            {chartType === 'line' && (
-              <LineChart data={data.department_statistics}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="department" tick={{ fill: '#374151' }} />
-                <YAxis tick={{ fill: '#374151' }} />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="average_risk_score" stroke="#6366f1" name="Risk Score" />
-                <Line type="monotone" dataKey="transaction_count" stroke="#34d399" name="Transactions" />
-              </LineChart>
-            )}
-            {chartType === 'area' && (
-              <AreaChart data={data.department_statistics}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="department" tick={{ fill: '#374151' }} />
-                <YAxis tick={{ fill: '#374151' }} />
-                <Tooltip />
-                <Legend />
-                <Area type="monotone" dataKey="average_risk_score" fill="#6366f1" stroke="#4f46e5" name="Risk Score" />
-                <Area type="monotone" dataKey="transaction_count" fill="#34d399" stroke="#059669" name="Transactions" />
-              </AreaChart>
-            )}
-            {chartType === 'pie' && (
-              <PieChart>
-                <Pie
-                  data={data.department_statistics}
-                  dataKey="transaction_count"
-                  nameKey="department"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={150}
-                  fill="#6366f1"
-                  label
-                >
-                  {data.department_statistics.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={['#6366f1', '#34d399', '#f59e0b'][index % 3]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            )}
+        <div className="h-96">
+          <ResponsiveContainer>
+            {renderChart()}
           </ResponsiveContainer>
         </div>
       </Card>
